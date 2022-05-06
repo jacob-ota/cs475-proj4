@@ -4,6 +4,7 @@
 
 #define NLOCK 10
 #define NPROC 20
+int matrixDimension = NLOCK + NPROC;
 int **adjacencyMatrix;
 int first;
 int last;
@@ -12,11 +13,12 @@ int *visited;
 
 void rag_init()
 {
-    adjacencyMatrix = (int **)malloc(NLOCK + NPROC * sizeof(int *));
-    for (int i = 0; i < NLOCK + NPROC; i++)
+    adjacencyMatrix = (int **)malloc(matrixDimension * sizeof(int *));
+    for (int i = 0; i < matrixDimension; i++)
     {
-        adjacencyMatrix[i] = (int *)malloc(NLOCK + NPROC * sizeof(int));
+        adjacencyMatrix[i] = (int *)malloc(matrixDimension * sizeof(int));
     }
+    
 }
 
 void rag_request(int pid, int lockid)
@@ -50,20 +52,7 @@ void dealloc(int pid, int lockid)
 
 void rag_print()
 {
-    printf("   ");
-    for (int i = 0; i < NLOCK + NPROC; i++)
-    {
-        if (i < NLOCK)
-        {
-            printf("%d ", i);
-        }
-        else
-        {
-            printf("%d ", i - NLOCK);
-        }
-    }
-    printf("\n");
-    for (int i = 0; i < NLOCK + NPROC; i++)
+    for (int i = 0; i < matrixDimension; i++)
     {
         if (i < NLOCK)
         {
@@ -73,7 +62,7 @@ void rag_print()
         {
             printf("P%d ", i - NLOCK);
         }
-        for (int j = 0; j < NLOCK + NPROC; j++)
+        for (int j = 0; j < matrixDimension; j++)
         {
             printf("%d ", adjacencyMatrix[i][j]);
         }
@@ -100,7 +89,6 @@ int main(int argc, char *argv[])
         exit(0);
     }
     rag_init();
-    rag_print();
     while (1)
     {
         if (feof(file))
@@ -124,7 +112,5 @@ int main(int argc, char *argv[])
             dealloc(first, last);
         }
     }
-
-    rag_print();
     return 0;
 }
