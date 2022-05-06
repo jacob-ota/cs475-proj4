@@ -2,14 +2,26 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define NLOCK 10
-#define NPROC 20
+#define NLOCK 5
+#define NPROC 10
 int matrixDimension = NLOCK + NPROC;
 int **adjacencyMatrix;
 int first;
 int last;
 char tmpCmdType;
 int *visited;
+
+// typedef struct Node
+// {
+//     int vert;
+//     struct node *nxt;
+// } Node;
+
+// typedef struct Graph
+// {
+//     int size;
+//     struct node **adjList;
+// } Graph;
 
 void rag_init()
 {
@@ -18,7 +30,17 @@ void rag_init()
     {
         adjacencyMatrix[i] = (int *)malloc(matrixDimension * sizeof(int));
     }
-    
+
+    // Graph
+    // Graph *adjGraph = malloc(sizeof(struct Graph));
+    // adjGraph->size = matrixDimension;
+    // adjGraph->adjList = malloc(matrixDimension * sizeof(struct Node *));
+    // for (int i = 0; i < matrixDimension; i++)
+    // {
+    //     adjGraph->adjList[i] = NULL;
+    // }
+
+    // return adjGraph;
 }
 
 void rag_request(int pid, int lockid)
@@ -73,11 +95,31 @@ void init_DFS()
 {
     visited = (int *)malloc(NLOCK * sizeof(int));
 }
-void deadlock_detect(int pid, int lockid)
+void deadlock_detect()
 {
+    for (int row = 0; row < NLOCK; row++)
+    {
+        for (int col = NLOCK; col < matrixDimension; col++)
+        {
+            if (adjacencyMatrix[row][col] == 1)
+            {
+                printf("Lock %d is acquired by PID %d\n", row, col - NLOCK);
+            }
+        }
+    }
+
+    for (int pidRow = NLOCK; pidRow < matrixDimension; pidRow++)
+    {
+        for (int colLock = 0; colLock < matrixDimension; colLock++)
+        {
+            if (adjacencyMatrix[pidRow][colLock] == 1)
+            {
+                printf("Lock %d is requested by PID %d\n", colLock, pidRow - NLOCK);
+            }
+        }
+    }
     // First 10 Locks & Last 20 Pids (pid + NLOCK)
     // Tracks visited nodes
-    visited[lockid] = 1;
 }
 
 int main(int argc, char *argv[])
@@ -112,5 +154,7 @@ int main(int argc, char *argv[])
             dealloc(first, last);
         }
     }
+    rag_print();
+    deadlock_detect();
     return 0;
 }
