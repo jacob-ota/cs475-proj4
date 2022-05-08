@@ -10,19 +10,7 @@ int first;
 int last;
 char tmpCmdType;
 int *visited;
-
-// typedef struct Node
-// {
-//     int vert;
-//     struct node *nxt;
-// } Node;
-
-// typedef struct Graph
-// {
-//     int size;
-//     struct node **adjList;
-// } Graph;
-
+int deadlocks[NLOCK + NPROC];
 void rag_init()
 {
     adjacencyMatrix = (int **)malloc(matrixDimension * sizeof(int *));
@@ -30,17 +18,6 @@ void rag_init()
     {
         adjacencyMatrix[i] = (int *)malloc(matrixDimension * sizeof(int));
     }
-
-    // Graph
-    // Graph *adjGraph = malloc(sizeof(struct Graph));
-    // adjGraph->size = matrixDimension;
-    // adjGraph->adjList = malloc(matrixDimension * sizeof(struct Node *));
-    // for (int i = 0; i < matrixDimension; i++)
-    // {
-    //     adjGraph->adjList[i] = NULL;
-    // }
-
-    // return adjGraph;
 }
 
 void rag_request(int pid, int lockid)
@@ -91,35 +68,45 @@ void rag_print()
         printf("\n");
     }
 }
-void init_DFS()
+int dfs(int deadIndx, int vertex, int *visited)
 {
-    visited = (int *)malloc(NLOCK * sizeof(int));
-}
-void deadlock_detect()
-{
-    for (int row = 0; row < NLOCK; row++)
+    // Vertex = Current Testing Lock
+    visited[vertex] = 1;
+    // int deadIndex = 0;
+    for (int currHorizPid = 0; currHorizPid < matrixDimension; currHorizPid++) // i = col (pid)
     {
-        for (int col = NLOCK; col < matrixDimension; col++)
+        // printf("Vertex %d & i = %d\n", vertex, currHorizPid);
+        if (adjacencyMatrix[vertex][currHorizPid])
         {
-            if (adjacencyMatrix[row][col] == 1)
+            for (int row = NLOCK; row < matrixDimension; row++) // Go through col of Lock vertex
             {
-                printf("Lock %d is acquired by PID %d\n", row, col - NLOCK);
+                if (adjacencyMatrix[row][vertex] == 1 && row != currHorizPid) // If detecting a 1 other than currHorizPid
+                {
+                    // printf("Deadlock detected, Lock %d acquired by pid %d but requested by pid %d \n", vertex, currHorizPid - NLOCK, row - NLOCK);
+                    // Duplicate pid=2 lockid=1 for input_file4, otherwise works perfectly
+                    deadlocks[deadIndx] = currHorizPid - NLOCK; // PID THAT IS DEADLOCKING
+                    deadIndx++;
+                    deadlocks[deadIndx] = vertex;
+                    deadIndx++;
+                }
             }
         }
+    }
+    if (vertex < NLOCK - 1)
+    {
+        deadIndx = dfs(deadIndx, vertex + 1, visited);
     }
 
-    for (int pidRow = NLOCK; pidRow < matrixDimension; pidRow++)
+    return deadIndx;
+}
+int deadlock_detect()
+{
+    int visited[matrixDimension];
+    for (int i = 0; i < matrixDimension; i++)
     {
-        for (int colLock = 0; colLock < matrixDimension; colLock++)
-        {
-            if (adjacencyMatrix[pidRow][colLock] == 1)
-            {
-                printf("Lock %d is requested by PID %d\n", colLock, pidRow - NLOCK);
-            }
-        }
+        visited[i] = 0;
     }
-    // First 10 Locks & Last 20 Pids (pid + NLOCK)
-    // Tracks visited nodes
+    return dfs(0, 0, visited);
 }
 
 int main(int argc, char *argv[])
@@ -154,7 +141,20 @@ int main(int argc, char *argv[])
             dealloc(first, last);
         }
     }
+    int deadIndex = deadlock_detect();
+    for (int i = 0; i < deadIndex; i++)
+    {
+        if (i == 0 || i % 2 == 0)
+        {
+            printf("pid=%d ", deadlocks[i]);
+        }
+        else
+        {
+            printf("lockid=%d \n", deadlocks[i]);
+        }
+        // printf("\n\npid=%d lockid=%d\n", deadlocks[i], deadlocks[i + 1]);
+    }
+
     rag_print();
-    deadlock_detect();
     return 0;
 }
